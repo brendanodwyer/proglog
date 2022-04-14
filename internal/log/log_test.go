@@ -1,12 +1,13 @@
 package log
 
 import (
-	api "github.com/brendanodwyer/proglog/api/v1"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	api "github.com/brendanodwyer/proglog/api/v1"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestLog(t *testing.T) {
