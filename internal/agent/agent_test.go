@@ -4,6 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"testing"
+	"time"
+
 	api "github.com/brendanodwyer/proglog/api/v1"
 	"github.com/brendanodwyer/proglog/internal/agent"
 	"github.com/brendanodwyer/proglog/internal/config"
@@ -11,10 +16,6 @@ import (
 	"github.com/travisjeffery/go-dynaport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"io/ioutil"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestAgent(t *testing.T) {
