@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/brendanodwyer/proglog/internal/loadbalance"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -61,6 +62,7 @@ func TestAgent(t *testing.T) {
 			StartJoinAddrs:  startJoinAddrs,
 			ACLModelFile:    config.ACLModelFile,
 			ACLPolicyFile:   config.ACLPolicyFile,
+			Bootstrap:       i == 0,
 		})
 		require.NoError(t, err)
 
@@ -85,6 +87,9 @@ func TestAgent(t *testing.T) {
 		})
 	require.NoError(t, err)
 
+	// wait until replication has finished
+	time.Sleep(3 * time.Second)
+
 	consumerResponse, err := leaderClient.Consume(
 		context.Background(),
 		&api.ConsumeRequest{
@@ -104,6 +109,18 @@ func TestAgent(t *testing.T) {
 		})
 	require.NoError(t, err)
 	require.Equal(t, consumerResponse.Record.Value, []byte("foo"))
+
+	consumerResponse, err = leaderClient.Consume(
+		context.Background(),
+		&api.ConsumeRequest{
+			Offset: produceResponse.Offset + 1,
+		},
+	)
+	require.Nil(t, consumerResponse)
+	require.Error(t, err)
+	got := grpc.Code(err)
+	want := grpc.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
+	require.Equal(t, got, want)
 }
 
 func client(t *testing.T, agent *agent.Agent, tlsConfig *tls.Config) api.LogClient {
@@ -112,7 +129,7 @@ func client(t *testing.T, agent *agent.Agent, tlsConfig *tls.Config) api.LogClie
 	rpcAddr, err := agent.Config.RPCAddr()
 	require.NoError(t, err)
 
-	conn, err := grpc.Dial(fmt.Sprintf("%s", rpcAddr), opts...)
+	conn, err := grpc.Dial(fmt.Sprintf("%s:///%s", loadbalance.Name, rpcAddr), opts...)
 	require.NoError(t, err)
 
 	client := api.NewLogClient(conn)
